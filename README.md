@@ -71,9 +71,6 @@ python manage.py runserver
 - `POST /api/v1/login/`: User login.
 - `POST /api/v1/logout/`: User logout.
 
-## Authentication and Permissions
-
-This API uses token-based authentication. To access the protected endpoints (user and task endpoints), include the token in the request headers:
 
 
 
