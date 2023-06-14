@@ -13,22 +13,22 @@ Django Rest Framework (version 3.12 or higher)
 #### Installation
 
 ##### 1. Clone the repository:
-git clone https://github.com/rehman671/Todo.git
+        git clone https://github.com/rehman671/Todo.git
 
 
 ##### 2. Navigate to the project directory:
-cd Todo
+        cd Todo
 
 
 ##### 3. Create a virtual environment (optional):
-python3 -m venv venv
+        python3 -m venv venv
 
 
 ##### 4. Activate the virtual environment:
-    On macOS and Linux:
-        source venv/bin/activate
-    On Windows:
-        venv\Scripts\activate
+On macOS and Linux:
+    source venv/bin/activate
+On Windows:
+    venv\Scripts\activate
 ##### 5. Apply the database migrations:
     python manage.py migrate
 
