@@ -1,19 +1,18 @@
-from django.shortcuts import render
 from django.contrib.auth import authenticate
-from django.utils.decorators import method_decorator
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import login
-from django.contrib.auth import logout
-from django.views.decorators.csrf import csrf_exempt
 from api.models import CustomUser , Task
-from api.serializers import EntitySerializer , TaskSerializer
+from api.serializers import EntitySerializer , TaskSerializer , LogoutSerializer , CustomTokenObtainPairSerializer 
 from rest_framework.response import Response
-from rest_framework import viewsets
+from rest_framework import viewsets , generics
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import api_view , permission_classes 
 from rest_framework.decorators import action
-from rest_framework.views import APIView
 from rest_framework import status
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
+
 
 # Create your views here.
 
@@ -43,12 +42,50 @@ class UserViewSet(viewsets.ModelViewSet):
 
         return Response(
             {
-                'Message': 'User Created Successfully',
+                'Message': 'Signed Up Successfully',
                 'status' : 200,
                 'username':str(username),
                 'email':str(email)
             }
         )
+
+    @action(detail=False , methods=['POST'])
+    def login(self, request ):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        try:
+            user = authenticate(request , username=username , password = password)
+            loggedUser = CustomUser.objects.get(username = username)
+
+            if user is not None:
+                login(request , user)
+                custom_token = CustomTokenObtainPairView.serializer_class.get_token(user=user)
+                print(custom_token)
+                token = {
+                    'refresh' : str(custom_token),
+                    'access' : str(custom_token.access_token)
+                }
+
+                return Response(
+                    {
+                        'message' : 'Logged In successfully',
+                        'status' : 200,
+                        'Uid' : loggedUser.Uid,
+                        'token' : token
+                     }
+                )
+            else:
+                return Response({'error': 'Invalid credentials'}, status=400)
+        except CustomUser.DoesNotExist:
+            return Response(
+                {
+                    'message' : "username or passowrd is incorrect"
+                }
+            )
+        
+
+  
+            
     @action(detail=True, methods=['get'])
     def task(self , request , pk = None):
         try:
@@ -64,33 +101,21 @@ class UserViewSet(viewsets.ModelViewSet):
             )
 
 
-class LoginViewSet(APIView):
-    @method_decorator(csrf_exempt)
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
+class LogoutView(generics.GenericAPIView):
+    serializer_class = LogoutSerializer
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        username = request.data.get('username')
-        password = request.data.get('password')
-        try:
-            user = authenticate(request, username=username, password=password)
-            loggeduser = CustomUser.objects.get(username = username)
-            
-            if user is not None:
-                login(request, user)
-                return Response(
-                    {'message': 'Logged In successfully ',
-                    'status' : 200,
-                    "Uid":         loggeduser.Uid
-    })
-            else:
-                return Response({'error': 'Invalid credentials'}, status=400)
-        except CustomUser.DoesNotExist:
-            return Response(
-                {
-                    'message' : "username or passowrd is incorrect"
-                }
-            )
+        serializer = self.serializer_class(data = request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({
+            'status': 200,
+            'message': 'Logged out successfully'
+        }) 
+    
+
 
 class TaskViewSet(viewsets.ModelViewSet):
     queryset = Task.objects.all()
@@ -98,13 +123,5 @@ class TaskViewSet(viewsets.ModelViewSet):
 
 
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def logout_view(request):
-    logout(request)
-    return Response(
-        {
-            'user':str(request.user.username),
-            'message':'Logged out successfully'
-        }
-    )
+
+
