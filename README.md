@@ -26,8 +26,10 @@ Django Rest Framework (version 3.12 or higher)
 
 ##### 4. Activate the virtual environment:
 On macOS and Linux:
+
     source venv/bin/activate
 On Windows:
+
     venv\Scripts\activate
 ##### 5. Apply the database migrations:
     python manage.py migrate
